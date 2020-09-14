@@ -22,6 +22,8 @@ class SungrowModbusTcpClient(ModbusTcpClient):
            self.decipher = AES.new(self.key, AES.MODE_ECB)
            self._send = self._send_cipher
            self._recv = self._recv_decipher
+        else:
+           self.key = b'no encryption'
 
     def connect(self):
         result = ModbusTcpClient.connect(self)
