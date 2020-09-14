@@ -32,7 +32,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
     def close(self):
         ModbusTcpClient.close(self)
         self.key = None
-        
+
     def _send_cipher(self, request):
         length = len(request)
         padding = 16 - (length % 16)
@@ -41,7 +41,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         return ModbusTcpClient._send(self, encrypted_request)
 
     def _recv_decipher(self, size):
-        while len(self.fifo) < size:
+        if len(self.fifo) < size:
             header = ModbusTcpClient._recv(self, 4)
             if header and len(header) == 4:
                length = int(header[2]) + int(header[3])
