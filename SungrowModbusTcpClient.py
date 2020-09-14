@@ -46,7 +46,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         else:
            recv_size = size
 
-        if len(self.fifo) < recv_size:
+        if len(self.fifo) == 0:
             header = ModbusTcpClient._recv(self, 4)
             if header and len(header) == 4:
                packet_len = int(header[2])
