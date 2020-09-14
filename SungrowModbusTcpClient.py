@@ -42,7 +42,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         return ModbusTcpClient._send(self, encrypted_request)
 
     def _recv_decipher(self, size):
-        print('*** size', size)
+        #print('*** size', size)
         if size is None:
            recv_size = 1
         else:
@@ -50,24 +50,24 @@ class SungrowModbusTcpClient(ModbusTcpClient):
 
         if len(self.fifo) == 0:
             header = ModbusTcpClient._recv(self, 4)
-            print('*** header', header)
+            #print('*** header', header)
             if header and len(header) == 4:
                packet_len = int(header[2])
                padding = int(header[3])
                length = packet_len + padding
-               print('*** length', length, packet_len, padding)
+               #print('*** length', length, packet_len, padding)
                encrypted_packet = ModbusTcpClient._recv(self, length)
-               print('*** encrypted_packet', encrypted_packet)
+               #print('*** encrypted_packet', encrypted_packet)
                if encrypted_packet and len(encrypted_packet) == length:
                   packet = self.decipher.decrypt(encrypted_packet)
                   packet = self.transactionID + packet[2:]
-                  print('*** packet', packet)
+                  #print('*** packet', packet)
                   self.fifo = self.fifo + packet[:packet_len]
 
         recv_size = min(recv_size, len(self.fifo))
-        print('*** recv_size', recv_size)
+        #print('*** recv_size', recv_size)
         result = self.fifo[:recv_size]
         self.fifo = self.fifo[recv_size:]
-        print('*** fifo', self.fifo)
-        print('*** result', result)
+        #print('*** fifo', self.fifo)
+        #print('*** result', result)
         return result
