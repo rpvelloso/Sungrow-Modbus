@@ -38,8 +38,9 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         padding = 16 - (length % 16)
         self.transactionID = request[:2]
         request = HEADER + bytes(request[2:]) + bytes([0xff for i in range(0, padding)])
-        encrypted_request = bytes([1, 0, length, padding]) + self.decipher.encrypt(request)
-        return ModbusTcpClient._send(self, encrypted_request)
+        crypto_header = bytes([1, 0, length, padding])
+        encrypted_request = crypto_header + self.decipher.encrypt(request)
+        return ModbusTcpClient._send(self, encrypted_request) - len(crypto_header) - padding
 
     def _recv_decipher(self, size):
         #print('*** size', size)
