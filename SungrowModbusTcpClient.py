@@ -41,7 +41,12 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         return ModbusTcpClient._send(self, encrypted_request)
 
     def _recv_decipher(self, size):
-        if len(self.fifo) < size:
+        if size is None:
+           recv_size = 1
+        else:
+           recv_size = size
+
+        if len(self.fifo) < recv_size:
             header = ModbusTcpClient._recv(self, 4)
             if header and len(header) == 4:
                length = int(header[2]) + int(header[3])
@@ -50,7 +55,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
                   packet = self.decipher.decrypt(encrypted_packet)
                   self.fifo = self.fifo + packet[:length - header[3]]
 
-        size = min(size, len(self.fifo))
-        result = self.fifo[:size]
-        self.fifo = self.fifo[size:]
+        recv_size = min(recv_size, len(self.fifo))
+        result = self.fifo[:recv_size]
+        self.fifo = self.fifo[recv_size:]
         return result
