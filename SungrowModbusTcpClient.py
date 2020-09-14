@@ -11,6 +11,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
     def __init__(self, **kwargs):
         ModbusTcpClient.__init__(self, **kwargs)
         self.fifo = bytes()
+        self.key = None
 
     def _getkey(self):
         self._send(GET_KEY)
@@ -24,7 +25,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
 
     def connect(self):
         result = ModbusTcpClient.connect(self)
-        if result:
+        if result and not self.key:
            self._getkey()
         return result
 
@@ -40,9 +41,9 @@ class SungrowModbusTcpClient(ModbusTcpClient):
             header = ModbusTcpClient._recv(self, 4)
             if header and len(header) == 4:
                length = header[2] + header[3]
-               encripted_packet = ModbusTcpClient._recv(self, length)
-               if encripted_packet and len(encripted_packet) == length:
-                  packet = self.decipher.decrypt(encripted_packet)
+               encrypted_packet = ModbusTcpClient._recv(self, length)
+               if encrypted_packet and len(encrypted_packet) == length:
+                  packet = self.decipher.decrypt(encrypted_packet)
                   self.fifo = self.fifo + packet[:length - header[3]]
 
         size = min(size, len(self.fifo))
