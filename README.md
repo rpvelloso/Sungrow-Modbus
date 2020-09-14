@@ -1,2 +1,3 @@
 # Sungrow-Modbus
-TCP Client for Sungrow Devices with encryption
+TCP Client for Sungrow Devices with AES128 EBC encryption
+Class based on pymodbus.ModbusTcpClient, completely interchangeable, just replace ModbusTcpClient() with SungrowModbusTcpClient()
