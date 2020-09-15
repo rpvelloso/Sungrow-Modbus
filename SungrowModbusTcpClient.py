@@ -34,6 +34,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
     def close(self):
         ModbusTcpClient.close(self)
         self.key = None
+        self.fifo = bytes()
 
     def _send_cipher(self, request):
         length = len(request)
