@@ -29,6 +29,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         result = ModbusTcpClient.connect(self)
         if result and not self.key:
            self._getkey()
+        self.fifo = bytes()
         return result
 
     def close(self):
