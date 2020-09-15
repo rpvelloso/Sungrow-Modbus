@@ -19,7 +19,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         self.pub_key = self.key_packet[9:]
         if (self.pub_key != NO_CRYPTO1) and (self.pub_key != NO_CRYPTO2):
            self.key = bytes(a ^ b for (a, b) in zip(self.pub_key, priv_key))
-           self.decipher = AES.new(self.key, AES.MODE_ECB)
+           self.aes_ecb = AES.new(self.key, AES.MODE_ECB)
            self._send = self._send_cipher
            self._recv = self._recv_decipher
         else:
@@ -40,7 +40,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         self.transactionID = request[:2]
         request = HEADER + bytes(request[2:]) + bytes([0xff for i in range(0, padding)])
         crypto_header = bytes([1, 0, length, padding])
-        encrypted_request = crypto_header + self.decipher.encrypt(request)
+        encrypted_request = crypto_header + self.aes_ecb.encrypt(request)
         return ModbusTcpClient._send(self, encrypted_request) - len(crypto_header) - padding
 
     def _recv_decipher(self, size):
@@ -52,7 +52,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
                length = packet_len + padding
                encrypted_packet = ModbusTcpClient._recv(self, length)
                if encrypted_packet and len(encrypted_packet) == length:
-                  packet = self.decipher.decrypt(encrypted_packet)
+                  packet = self.aes_ecb.decrypt(encrypted_packet)
                   packet = self.transactionID + packet[2:]
                   self.fifo = self.fifo + packet[:packet_len]
 
