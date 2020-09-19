@@ -17,7 +17,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         self._send(GET_KEY)
         self._key_packet = self._recv(25)
         self._pub_key = self._key_packet[9:]
-        if (self._pub_key != NO_CRYPTO1) and (self._pub_key != NO_CRYPTO2):
+        if self._pub_key and (self._pub_key != NO_CRYPTO1) and (self._pub_key != NO_CRYPTO2):
            self._key = bytes(a ^ b for (a, b) in zip(self._pub_key, priv_key))
            self._aes_ecb = AES.new(self._key, AES.MODE_ECB)
            self._send = self._send_cipher
