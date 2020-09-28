@@ -1,5 +1,6 @@
 from pymodbus.client.sync import ModbusTcpClient
 from Crypto.Cipher import AES
+from datetime import date
 
 priv_key = b'Grow#0*2Sun68CbE'
 NO_CRYPTO1 = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
@@ -12,25 +13,43 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         ModbusTcpClient.__init__(self, **kwargs)
         self._fifo = bytes()
         self._key = None
+        self._orig_recv = self._recv
+        self._orig_send = self._send
+        self._key_date = date.today()
 
-    def _getkey(self):
-        self._send(GET_KEY)
-        self._key_packet = self._recv(25)
-        self._pub_key = self._key_packet[9:]
-        if (self._pub_key != NO_CRYPTO1) and (self._pub_key != NO_CRYPTO2):
-           self._key = bytes(a ^ b for (a, b) in zip(self._pub_key, priv_key))
+    def _setup(self, key):
+           self._key = key
            self._aes_ecb = AES.new(self._key, AES.MODE_ECB)
+           self._key_date = date.today()
            self._send = self._send_cipher
            self._recv = self._recv_decipher
-        else:
-           self._key = b'no encryption'
+           self._fifo = bytes()
+
+    def _restore(self):
+           self._key = None
+           self._aes_ecb = None
+           self._send = self._orig_send
+           self._recv = self._orig_recv
+           self._fifo = bytes()
+
+    def _getkey(self):
+        if (self._key is None) or (self._key_date != date.today()):
+           self._restore()
+           self._send(GET_KEY)
+           self._key_packet = self._recv(25)
+           self._pub_key = self._key_packet[9:]
+           if (self._pub_key != NO_CRYPTO1) and (self._pub_key != NO_CRYPTO2):
+              self._setup(bytes(a ^ b for (a, b) in zip(self._pub_key, priv_key)))
+           else:
+              self._key = b'no encryption'
 
     def connect(self):
         self.close()
         result = ModbusTcpClient.connect(self)
-        if result and not self._key:
+        if not result:
+           self._restore()
+        else:
            self._getkey()
-        self._fifo = bytes()
         return result
 
     def _send_cipher(self, request):
