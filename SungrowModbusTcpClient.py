@@ -2,7 +2,7 @@ from pymodbus.client.sync import ModbusTcpClient
 from Crypto.Cipher import AES
 from datetime import date
 
-priv_key = b'Grow#0*2Sun68CbE'
+PRIV_KEY = b'Grow#0*2Sun68CbE'
 NO_CRYPTO1 = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 NO_CRYPTO2 = b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'
 GET_KEY = b'\x68\x68\x00\x00\x00\x06\xf7\x04\x0a\xe7\x00\x08'
@@ -17,8 +17,8 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         self._orig_send = self._send
         self._key_date = date.today()
 
-    def _setup(self, key):
-           self._key = key
+    def _setup(self):
+           self._key = bytes(a ^ b for (a, b) in zip(self._pub_key, PRIV_KEY))
            self._aes_ecb = AES.new(self._key, AES.MODE_ECB)
            self._key_date = date.today()
            self._send = self._send_cipher
@@ -39,7 +39,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
            self._key_packet = self._recv(25)
            self._pub_key = self._key_packet[9:]
            if (self._pub_key != NO_CRYPTO1) and (self._pub_key != NO_CRYPTO2):
-              self._setup(bytes(a ^ b for (a, b) in zip(self._pub_key, priv_key)))
+              self._setup()
            else:
               self._key = b'no encryption'
 
