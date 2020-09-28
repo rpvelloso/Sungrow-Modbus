@@ -38,7 +38,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
            self._send(GET_KEY)
            self._key_packet = self._recv(25)
            self._pub_key = self._key_packet[9:]
-           if (self._pub_key != NO_CRYPTO1) and (self._pub_key != NO_CRYPTO2):
+           if (len(self._pub_key) == 16) and (self._pub_key != NO_CRYPTO1) and (self._pub_key != NO_CRYPTO2):
               self._setup()
            else:
               self._key = b'no encryption'
