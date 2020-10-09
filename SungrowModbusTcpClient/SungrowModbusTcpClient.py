@@ -19,7 +19,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         self._key_date = date.today()
 
     def _setup(self):
-           self._key = bytes(a ^ b for (a, b) in zip(self._pub_key, self.priv_key))
+           self._key = bytes(a ^ b for (a, b) in zip(self._pub_key, self._priv_key))
            self._aes_ecb = AES.new(self._key, AES.MODE_ECB)
            self._key_date = date.today()
            self._send = self._send_cipher
