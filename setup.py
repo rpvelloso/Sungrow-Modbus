@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.1.0",
     author="Roberto Panerai Velloso",
     author_email="rvelloso@gmail.com",
-    description="A ModbusTCPClient wrapper for talking to Sungrow solar inverters",
+    description="A ModbusTcpClient wrapper for talking to Sungrow solar inverters",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/rpvelloso/Sungrow-Modbus",
