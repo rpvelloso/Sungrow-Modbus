@@ -9,16 +9,17 @@ GET_KEY = b'\x68\x68\x00\x00\x00\x06\xf7\x04\x0a\xe7\x00\x08'
 HEADER = bytes([0x68, 0x68])
 
 class SungrowModbusTcpClient(ModbusTcpClient):
-    def __init__(self, **kwargs):
+    def __init__(self, priv_key=PRIV_KEY, **kwargs):
         ModbusTcpClient.__init__(self, **kwargs)
         self._fifo = bytes()
+        self._priv_key = priv_key
         self._key = None
         self._orig_recv = self._recv
         self._orig_send = self._send
         self._key_date = date.today()
 
     def _setup(self):
-           self._key = bytes(a ^ b for (a, b) in zip(self._pub_key, PRIV_KEY))
+           self._key = bytes(a ^ b for (a, b) in zip(self._pub_key, self.priv_key))
            self._aes_ecb = AES.new(self._key, AES.MODE_ECB)
            self._key_date = date.today()
            self._send = self._send_cipher
