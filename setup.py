@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="SungrowModbusTcpClient",
-    version="0.1",
+    version="0.1.0",
     author="Roberto Panerai Velloso",
     author_email="rvelloso@gmail.com",
     description="A ModbusTCPClient wrapper for talking to Sungrow solar inverters",
