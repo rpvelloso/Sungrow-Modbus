@@ -53,6 +53,10 @@ class SungrowModbusTcpClient(ModbusTcpClient):
            self._getkey()
         return result
 
+    def close(self):
+       ModbusTcpClient.close(self)
+       self._fifo = bytes()
+
     def _send_cipher(self, request):
         self._fifo = bytes()
         length = len(request)
