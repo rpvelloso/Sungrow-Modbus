@@ -43,6 +43,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
               self._setup()
            else:
               self._key = b'no encryption'
+              self._key_date = date.today()
 
     def connect(self):
         self.close()
