@@ -48,9 +48,14 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         self.close()
         result = ModbusTcpClient.connect(self)
         if not result:
-           self._restore()
+            self._restore()
         else:
-           self._getkey()
+            self._getkey()
+            if self._key is not None:
+               # We now have the encryption key stored and a second
+               # connect will likely succeed.
+               self.close()
+               result = ModbusTcpClient.connect(self)
         return result
 
     def close(self):
