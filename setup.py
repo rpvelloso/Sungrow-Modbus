@@ -15,7 +15,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'pymodbus>=2.3.0',
-        'pycrypto>=2.6.1',
+        'pycryptodome',
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
