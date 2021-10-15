@@ -1,5 +1,5 @@
 from pymodbus.client.sync import ModbusTcpClient
-from Crypto.Cipher import AES
+from Cryptodome.Cipher import AES
 from datetime import date
 
 PRIV_KEY = b'Grow#0*2Sun68CbE'
