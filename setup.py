@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="SungrowModbusTcpClient",
-    version="0.1.5",
+    version="0.1.6",
     author="Roberto Panerai Velloso",
     author_email="rvelloso@gmail.com",
     description="A ModbusTcpClient wrapper for talking to Sungrow solar inverters",
@@ -15,7 +15,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'pymodbus>=2.3.0',
-        'pycrypto>=2.6.1',
+        'pycryptodomex>=3.11.0',
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
