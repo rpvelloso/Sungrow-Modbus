@@ -1,9 +1,9 @@
 try:
-    # Pymodbus < 3.0
-    from pymodbus.client.sync import ModbusTcpClient
-except ImportError:
     # Pymodbus >= 3.0
     from pymodbus.client import ModbusTcpClient
+except ImportError:
+    # Pymodbus < 3.0
+    from pymodbus.client.sync import ModbusTcpClient
 from Cryptodome.Cipher import AES
 from datetime import date
 
