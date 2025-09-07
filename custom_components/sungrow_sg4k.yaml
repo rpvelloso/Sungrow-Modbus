@@ -1,0 +1,128 @@
+#logger:
+#  logs:
+#    homeassistant.custom_components.sungrowmodbus: debug
+#    pymodbus: debug
+
+sungrowmodbus:
+  - name: sungrow_sg4k
+    host: hostname/ip address
+    port: port number
+    timeout: 10
+    sensors:
+      - name: fault_code
+        slave: 1
+        address: 5044
+        input_type: input
+      - name: total_dc_power
+        slave: 1
+        address: 5016
+        data_type: uint32
+        swap: word
+        input_type: input
+        unit_of_measurement: W
+      - name: daily_power_yields
+        slave: 1
+        address: 5002
+        input_type: input
+        scale: 0.1
+        precision: 2
+        unit_of_measurement: kWh      
+      - name: internal_temperature
+        slave: 1
+        address: 5007
+        input_type: input
+        scale: 0.1
+        precision: 2
+        unit_of_measurement: °C
+      - name: daily_running_time
+        slave: 1solar
+        address: 5112
+        input_type: input
+        scale: 1
+        unit_of_measurement: min
+      - name: total_active_power
+        slave: 1
+        data_type: uint32
+        address: 5030
+        swap: word
+        input_type: input
+        unit_of_measurement: W
+      - name: grid_frequency
+        slave: 1
+        address: 5035
+        input_type: input
+        scale: 0.1
+        precision: 2
+        unit_of_measurement: Hz
+      - name: phase_voltage
+        slave: 1
+        input_type: input
+        address: 5018
+        scale: 0.1
+        precision: 2
+        unit_of_measurement: V
+      - name: phase_current
+        slave: 1
+        input_type: input
+        address: 5021
+        scale: 0.1
+        precision: 2
+        unit_of_measurement: A
+      - name: total_power_yields
+        slave: 1
+        scale: 0.1
+        precision: 2
+        data_type: uint32
+        swap: word
+        address: 5143
+        input_type: input
+        unit_of_measurement: kWh
+      - name: device_status
+        slave: 1
+        input_type: input
+        address: 5037
+      - name: mppt1_voltage
+        slave: 1
+        input_type: input
+        unit_of_measurement: V
+        address: 5010
+        scale: 0.1
+        precision: 2
+      - name: mppt1_current
+        slave: 1
+        input_type: input
+        unit_of_measurement: A
+        address: 5011
+        scale: 0.1
+        precision: 2
+      - name: mppt2_voltage
+        slave: 1
+        input_type: input
+        unit_of_measurement: V
+        address: 5012
+        scale: 0.1
+        precision: 2
+      - name: mppt2_current
+        slave: 1
+        input_type: input
+        unit_of_measurement: A
+        address: 5013
+        scale: 0.1
+        precision: 2
+      - name: power_factor
+        slave: 1
+        input_type: input
+        address: 5034
+        scale: 0.001
+        precision: 4        
+
+utility_meter:
+  daily_pv_yields:
+    source: sensor.total_power_yields
+    cycle: daily
+  monthly_pv_yields:
+    source: sensor.total_power_yields
+    cycle: monthly
+  yearly_pv_yields:
+    source: sensor.total_power_yields
+    cycle: yearly
