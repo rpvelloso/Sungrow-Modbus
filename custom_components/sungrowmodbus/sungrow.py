@@ -9,9 +9,6 @@ NO_CRYPTO2 = b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'
 GET_KEY = b'\x68\x68\x00\x00\x00\x06\xf7\x04\x0a\xe7\x00\x08'
 HEADER = bytes([0x68, 0x68])
 
-def raise_():
-    raise Exception("Invalid state")
-
 class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
     def __init__(self, priv_key=PRIV_KEY, **kwargs):
         AsyncModbusTcpClient.__init__(self, **kwargs)
