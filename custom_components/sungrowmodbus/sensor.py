@@ -116,11 +116,11 @@ class ModbusRegisterSensor(BaseStructPlatform, RestoreSensor, SensorEntity):
             self._slave, self._address, self._count, self._input_type
         )
         if raw_result is None:
-            self._attr_available = False
-            self._attr_native_value = None
-            if self._coordinator:
-                self._coordinator.async_set_updated_data(None)
-            self.async_write_ha_state()
+            #self._attr_available = False
+            #self._attr_native_value = None
+            #if self._coordinator:
+            #    self._coordinator.async_set_updated_data(None)
+            #self.async_write_ha_state()
             return
         self._attr_available = True
         result = self.unpack_structure_result(raw_result.registers)
