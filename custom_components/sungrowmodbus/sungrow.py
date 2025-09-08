@@ -9,9 +9,12 @@ NO_CRYPTO2 = b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'
 GET_KEY = b'\x68\x68\x00\x00\x00\x06\xf7\x04\x0a\xe7\x00\x08'
 HEADER = bytes([0x68, 0x68])
 
+def raise_():
+    raise Exception("Invalid state")
+
 class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
     def __init__(self, priv_key=PRIV_KEY, **kwargs):
-        AsyncModbusTcpClient.__init__(self, **kwargs)
+        super().__init__(self, **kwargs)
         Log.debug("*** AsyncSungrowModbusTcpClient *** init priv_key {}", priv_key)
         self._orig_callback_data = self.ctx.callback_data
         self._orig_low_level_send = self.ctx.low_level_send
@@ -35,7 +38,7 @@ class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
 
     async def connect(self):
         Log.debug("*** AsyncSungrowModbusTcpClient *** connect")
-        result = await AsyncModbusTcpClient.connect(self)
+        result = await super().connect(self)
         response = None
         if result:
             self._state = 'HANDSHAKE'
@@ -49,7 +52,7 @@ class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
 
     def close(self):
        Log.debug("*** AsyncSungrowModbusTcpClient *** close")
-       AsyncModbusTcpClient.close(self)
+       super().close(self)
        self._reset()
 
     def _low_level_send_cipher(self, request, addr: tuple | None = None):
