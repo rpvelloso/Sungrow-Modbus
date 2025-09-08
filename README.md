@@ -3,7 +3,9 @@
 
 ### Class based on pymodbus.ModbusTcpClient, completely interchangeable, just replace ModbusTcpClient() with SungrowModbusTcpClient()
 
-### Home Assistant Custom Component - tested with HASS docker v2025.8.3 and Sungrow SG4K inverter
+### Home Assistant Custom Component
+
+- Tested with HASS docker v2025.8.3 and Sungrow SG4K inverter
 
 - ALL the component code was ripped from the modbus custom component dev repository ```https://github.com/pymodbus-dev/homeassistant_modbus```. Unused code was removed.
 
