@@ -14,7 +14,7 @@ def raise_():
 
 class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
     def __init__(self, priv_key=PRIV_KEY, **kwargs):
-        super().__init__(self, **kwargs)
+        super().__init__(**kwargs)
         Log.debug("*** AsyncSungrowModbusTcpClient *** init priv_key {}", priv_key)
         self._orig_callback_data = self.ctx.callback_data
         self._orig_low_level_send = self.ctx.low_level_send
@@ -38,7 +38,7 @@ class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
 
     async def connect(self):
         Log.debug("*** AsyncSungrowModbusTcpClient *** connect")
-        result = await super().connect(self)
+        result = await super().connect()
         response = None
         if result:
             self._state = 'HANDSHAKE'
@@ -52,7 +52,7 @@ class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
 
     def close(self):
        Log.debug("*** AsyncSungrowModbusTcpClient *** close")
-       super().close(self)
+       super().close()
        self._reset()
 
     def _low_level_send_cipher(self, request, addr: tuple | None = None):
