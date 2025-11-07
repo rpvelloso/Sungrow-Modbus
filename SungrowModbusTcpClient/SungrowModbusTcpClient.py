@@ -1,4 +1,4 @@
-pymodbus.client import ModbusTcpClient
+from pymodbus.client import ModbusTcpClient
 from Cryptodome.Cipher import AES
 from datetime import date
 
