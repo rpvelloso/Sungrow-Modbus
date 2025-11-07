@@ -14,7 +14,7 @@ setuptools.setup(
     url="https://github.com/rpvelloso/Sungrow-Modbus",
     packages=setuptools.find_packages(),
     install_requires=[
-        'pymodbus>=2.3.0',
+        'pymodbus>=3.11.3,<4.0.0',
         'pycryptodomex>=3.11.0',
     ],
     classifiers=[
@@ -22,5 +22,5 @@ setuptools.setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.5.0',
+    python_requires='>=3.10.0',
 )
