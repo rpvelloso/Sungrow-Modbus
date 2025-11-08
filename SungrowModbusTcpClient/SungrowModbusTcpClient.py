@@ -124,7 +124,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
                 self._wrapper._state = 'HANDSHAKE'
                 # This sends a synchronous request to trigger sending the GET_KEY packet
                 # self.transaction.pdu_send(RestartCommunicationsOptionRequest())
-                self.execute(no_response_expected=True, request=RestartCommunicationsOptionRequest())
+                self.execute(no_response_expected=False, request=RestartCommunicationsOptionRequest())
                 if self._wrapper.pub_key is not None:
                     response = self._wrapper.pub_key
 
@@ -154,7 +154,7 @@ class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
                 response_future = asyncio.Future()
                 self._wrapper.set_response_future(response_future)
                 # This will trigger the sending of the GET_KEY packet
-                self.execute(no_response_expected=True, request=RestartCommunicationsOptionRequest())
+                self.execute(no_response_expected=False, request=RestartCommunicationsOptionRequest())
                 response = await asyncio.wait_for(
                     response_future, timeout=self.comm_params.timeout_connect
                 )
