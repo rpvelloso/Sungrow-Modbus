@@ -174,6 +174,7 @@ class SungrowModbusTCPWrapper():
         self.reset()
         self._pub_key: bytes | None = None
         self._crypto_enabled: bool = False
+        self._transactionID: bytes = bytes([0x00, 0x00])
 
     def set_pub_key(self, pub_key: bytes):
         self._pub_key = pub_key

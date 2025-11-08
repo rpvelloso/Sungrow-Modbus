@@ -99,7 +99,6 @@ class AsyncModbusServer:
             print(f"Server received encrypted: {data.hex()}")
             data = self.decoder._recv_cypher(data)
             print(f"Server received decrypted: {data.hex()}")
-
         return data
 
 
