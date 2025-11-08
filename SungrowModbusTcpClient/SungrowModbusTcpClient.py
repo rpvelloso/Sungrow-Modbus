@@ -6,7 +6,6 @@ from pymodbus.exceptions import ModbusIOException
 from pymodbus.pdu import ModbusPDU
 from Cryptodome.Cipher import AES
 from pymodbus.logging import Log
-import asyncio
 from collections.abc import Callable
 
 PRIV_KEY = b'Grow#0*2Sun68CbE'

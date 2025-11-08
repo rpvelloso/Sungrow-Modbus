@@ -1,4 +1,7 @@
-from SungrowModbusTcpClient.SungrowModbusTcpClient import SungrowModbusTcpClient
+from SungrowModbusTcpClient.SungrowModbusTcpClient import (
+    AsyncSungrowModbusTcpClient,
+    SungrowModbusTcpClient
+)
 import pytest
 import pytest_asyncio
 import random
@@ -84,13 +87,25 @@ async def async_modbus_fixture():
             pass
 
 @pytest.mark.asyncio
-async def test_basic_functionality(modbus_fixture: AsyncModbusServer):
+async def test_async_no_crypto(async_modbus_fixture: AsyncModbusServer):
     test_number = random.randint(1, 0xFFFF)
-    await modbus_fixture.set_holding_register(1, test_number)
+    await async_modbus_fixture.set_holding_register(1, test_number)
 
-    modbus_client = SungrowModbusTcpClient(host="localhost", port=5020)
+    modbus_client = AsyncSungrowModbusTcpClient(host="localhost", port=5020)
     await modbus_client.connect()
-    result = await modbus_client.read_holding_registers(1, count=1, unit=1)
+    result = await modbus_client.read_holding_registers(1, count=1, device_id=1)
     assert not result.isError()
     assert result.registers[0] == test_number
-    await modbus_client.close()
+    modbus_client.close()
+
+@pytest.mark.asyncio
+async def test_synchronous_no_crypto(async_modbus_fixture: AsyncModbusServer):
+    test_number = random.randint(1, 0xFFFF)
+    await async_modbus_fixture.set_holding_register(1, test_number)
+
+    modbus_client = SungrowModbusTcpClient(host="localhost", port=5020)
+    assert modbus_client.connect()
+    result = modbus_client.read_holding_registers(1, count=1, device_id=1)
+    assert not result.isError()
+    assert result.registers[0] == test_number
+    modbus_client.close()
