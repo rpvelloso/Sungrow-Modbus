@@ -1,6 +1,11 @@
 from SungrowModbusTcpClient.SungrowModbusTcpClient import (
     AsyncSungrowModbusTcpClient,
-    SungrowModbusTcpClient
+    SungrowModbusTcpClient,
+    GET_KEY,
+    PRIV_KEY,
+    HEADER,
+    SungrowCryptoInitRequest,
+    SungrowModbusTCPWrapper,
 )
 import pytest
 import pytest_asyncio
@@ -21,7 +26,7 @@ from pymodbus.datastore import (
 
 class AsyncModbusServer:
     """MODBUS server class."""
-    def __init__(self, host: str = "0.0.0.0", port: int = 5020) -> None:
+    def __init__(self, host: str = "0.0.0.0", port: int = 5020, crypto: bool = False) -> None:
         """Initialize server context and identity."""
         self.storage: ModbusDeviceContext
         self.context: ModbusServerContext
@@ -32,6 +37,11 @@ class AsyncModbusServer:
         self.host: str = host
         self.port: int = port
         self.test_number = random.randint(1, 0xFFFF)
+        self.crypto = crypto
+        self._pub_key: bytes = bytes([0xaa, 0xbb] * 8)
+        self.decoder = SungrowModbusTCPWrapper(priv_key=PRIV_KEY)
+        self.decoder.set_pub_key(self._pub_key)
+        self.handshake_done = False
         self.setup_server()
 
     def setup_server(self) -> None:
@@ -63,6 +73,8 @@ class AsyncModbusServer:
         self._mb_server = ModbusTcpServer(
             context=self.context,  # Data storage
             address=address,  # listen address
+            custom_pdu=[SungrowCryptoInitRequest] if self.crypto else None,
+            trace_packet=self.trace_packet,
         )
         await self._mb_server.serve_forever()
 
@@ -72,25 +84,29 @@ class AsyncModbusServer:
             await self._mb_server.shutdown()
             self._mb_server = None
 
+    def trace_packet(self, sending: bool, data: bytes) -> bytes:
+        if not self.crypto or not self.handshake_done:
+            return data
 
-@pytest_asyncio.fixture
-async def async_modbus_fixture():
-    modbus_server = AsyncModbusServer()
-    server_task = asyncio.create_task(modbus_server.run_async_server())
-    await asyncio.sleep(1)  # Give server time to start
-    try:
-        yield modbus_server
-        await modbus_server.stop()
-    finally:
-        server_task.cancel()
-        try:
-            await server_task
-        except asyncio.CancelledError:
-            pass
+        # Due to the asymmetry of this protocol we won't be able to use
+        # the client side encryption/decryption methods directly, so we
+        # re-implement them here for the server side. Poop.
+        if sending:
+            print(f"Server sending decrypted: {data.hex()}")
+            data = self.decoder._send_cypher(data)
+            print(f"Server sending encrypted: {data.hex()}")
+        else:
+            print(f"Server received encrypted: {data.hex()}")
+            data = self.decoder._recv_cypher(data)
+            print(f"Server received decrypted: {data.hex()}")
+
+        return data
 
 
 @pytest.fixture
-def synchronous_async_mqtt_fixture():
+def modbus_server_fixture():
+    # This awkward mess is to avoid having to implement a synchronous
+    # test modbus server, so we run the async version in a separate thread.
     modbus_server = AsyncModbusServer()
     server_ready = threading.Event()
 
@@ -114,21 +130,60 @@ def synchronous_async_mqtt_fixture():
         th.join(timeout=2)
 
 
+@pytest.fixture
+def crypto_modbus_server_fixture():
+    # This awkward mess is to avoid having to implement a synchronous
+    # test modbus server, so we run the async version in a separate thread.
+    modbus_server = AsyncModbusServer(crypto=True)
+    server_ready = threading.Event()
+
+    def run_server():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        async def start_and_signal():
+            server_ready.set()
+            await modbus_server.run_async_server()
+        loop.run_until_complete(start_and_signal())
+
+    th = threading.Thread(target=run_server, daemon=True)
+    th.start()
+    server_ready.wait(timeout=5)  # Wait for server to be ready
+    try:
+        yield modbus_server
+    finally:
+        # Stop the server
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(modbus_server.stop())
+        th.join(timeout=2)
+
+
 @pytest.mark.asyncio
-async def test_async_no_crypto(async_modbus_fixture: AsyncModbusServer):
+async def test_async_no_crypto(modbus_server_fixture: AsyncModbusServer):
     modbus_client = AsyncSungrowModbusTcpClient(host="localhost", port=5020)
     await modbus_client.connect()
     result = await modbus_client.read_holding_registers(1, count=1, device_id=1)
     assert not result.isError()
-    assert result.registers[0] == async_modbus_fixture.test_number
+    assert result.registers[0] == modbus_server_fixture.test_number
     modbus_client.close()
 
 @pytest.mark.asyncio
-async def test_synchronous_no_crypto(synchronous_async_mqtt_fixture: AsyncModbusServer):
+async def test_synchronous_no_crypto(modbus_server_fixture: AsyncModbusServer):
 
     modbus_client = SungrowModbusTcpClient(host="localhost", port=5020)
     assert modbus_client.connect()
     result = modbus_client.read_holding_registers(1, count=1, device_id=1)
     assert not result.isError()
-    assert result.registers[0] == synchronous_async_mqtt_fixture.test_number
+    assert result.registers[0] == modbus_server_fixture.test_number
+    modbus_client.close()
+
+@pytest.mark.asyncio
+async def test_async_crypto(crypto_modbus_server_fixture: AsyncModbusServer):
+
+    modbus_client = AsyncSungrowModbusTcpClient(host="localhost", port=5020)
+    await modbus_client.connect()
+    crypto_modbus_server_fixture.handshake_done = True
+    result = await modbus_client.read_holding_registers(1, count=1, device_id=1)
+    assert False
+    assert not result.isError()
+    assert result.registers[0] == crypto_modbus_server_fixture.test_number
     modbus_client.close()
