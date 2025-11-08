@@ -34,12 +34,13 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         if not self._connected:
             return self._connected
 
+        self.register(SungrowCryptoInitResponse)
         request = SungrowCryptoInitRequest()
         try:
             response = self.execute(no_response_expected=False, request=request)
             if isinstance(response, SungrowCryptoInitResponse) and response.pub_key is not None:
                 self._wrapper.set_pub_key(response.pub_key)
-                self._connected = False
+                self._connected = True
                 return True
         except ModbusIOException:  # pragma: no cover
             print("Server doesn't support Sungrow handshake")

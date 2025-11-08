@@ -1,3 +1,4 @@
+from time import sleep
 from SungrowModbusTcpClient.SungrowModbusTcpClient import (
     AsyncSungrowModbusTcpClient,
     SungrowModbusTcpClient,
@@ -88,17 +89,10 @@ class AsyncModbusServer:
         if not self.crypto or not self.handshake_done:
             return data
 
-        # Due to the asymmetry of this protocol we won't be able to use
-        # the client side encryption/decryption methods directly, so we
-        # re-implement them here for the server side. Poop.
         if sending:
-            print(f"Server sending decrypted: {data.hex()}")
             data = self.decoder._send_cypher(data)
-            print(f"Server sending encrypted: {data.hex()}")
         else:
-            print(f"Server received encrypted: {data.hex()}")
             data = self.decoder._recv_cypher(data)
-            print(f"Server received decrypted: {data.hex()}")
         return data
 
 
@@ -147,6 +141,7 @@ def crypto_modbus_server_fixture():
     th = threading.Thread(target=run_server, daemon=True)
     th.start()
     server_ready.wait(timeout=5)  # Wait for server to be ready
+    sleep(1)  # I don't know. Sleepy server?
     try:
         yield modbus_server
     finally:
