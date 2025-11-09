@@ -151,7 +151,7 @@ class SungrowCryptoInitRequest(SungrowCryptoInitPDU):
 
     async def update_datastore(self, context: ModbusDeviceContext) -> ModbusPDU:
         # This is a mild crime, but it's only used in the tests, so...
-        context.store['handshake_signal'] = True
+        context.store["handshake_signal"] = True
         return SungrowCryptoInitResponse()
 
 
