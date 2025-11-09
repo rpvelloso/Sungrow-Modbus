@@ -24,9 +24,13 @@ from pymodbus.datastore import (
 )
 from pymodbus.pdu.register_message import ReadInputRegistersRequest
 
+
 class AsyncModbusServer:
     """MODBUS server class."""
-    def __init__(self, host: str = "127.0.0.1", port: int = 5020, crypto: bool = False) -> None:
+
+    def __init__(
+        self, host: str = "127.0.0.1", port: int = 5020, crypto: bool = False
+    ) -> None:
         """Initialize server context and identity."""
         self.storage: ModbusDeviceContext
         self.context: ModbusServerContext
@@ -38,7 +42,7 @@ class AsyncModbusServer:
         self.port: int = port
         self.test_number = random.randint(1, 0xFFFE)
         self.crypto = crypto
-        self._pub_key: bytes = bytes([0xaa, 0xbb] * 8)
+        self._pub_key: bytes = bytes([0xAA, 0xBB] * 8)
         self.decoder = SungrowModbusTCPWrapper(priv_key=PRIV_KEY)
         self.decoder.set_pub_key(self._pub_key)
         self._handshake_done = False
@@ -46,13 +50,17 @@ class AsyncModbusServer:
 
     def setup_server(self) -> None:
         """Run server setup."""
-        self.holding_registers = ModbusSequentialDataBlock(0x00, [self.test_number] * 100)
-        self.input_registers = ModbusSequentialDataBlock(0x00, [self.test_number+1] * 100)
+        self.holding_registers = ModbusSequentialDataBlock(
+            0x00, [self.test_number] * 100
+        )
+        self.input_registers = ModbusSequentialDataBlock(
+            0x00, [self.test_number + 1] * 100
+        )
         self.storage = ModbusDeviceContext(
             hr=self.holding_registers, ir=self.input_registers
         )
         # This is set by SungrowCryptoInitRequest.update_datastore()
-        self.storage.store['handshake_signal'] = False
+        self.storage.store["handshake_signal"] = False
         self.context = ModbusServerContext(devices=self.storage)
 
     async def set_holding_register(self, address: int, value: int) -> None:
@@ -88,7 +96,11 @@ class AsyncModbusServer:
 
     def trace_packet(self, sending: bool, data: bytes) -> bytes:
 
-        if self.crypto and not self._handshake_done and self.storage.store['handshake_signal']:
+        if (
+            self.crypto
+            and not self._handshake_done
+            and self.storage.store["handshake_signal"]
+        ):
             # Rising edge on the handshake. Enable encryption after this send.
             self._handshake_done = True
             return data
@@ -119,9 +131,11 @@ def modbus_server_fixture(request):
         loop = asyncio.new_event_loop()
         modbus_server._loop = loop  # Save loop for teardown
         asyncio.set_event_loop(loop)
+
         async def start_and_signal():
             server_ready.set()
             await modbus_server.run_async_server()
+
         loop.run_until_complete(start_and_signal())
 
     th = threading.Thread(target=run_server, daemon=True)
@@ -132,9 +146,12 @@ def modbus_server_fixture(request):
     finally:
         # Stop the server using the correct loop
         modbus_server._loop.call_soon_threadsafe(
-            lambda: asyncio.ensure_future(modbus_server.stop(), loop=modbus_server._loop)
+            lambda: asyncio.ensure_future(
+                modbus_server.stop(), loop=modbus_server._loop
+            )
         )
         th.join(timeout=2)
+
 
 @pytest.mark.asyncio
 async def test_async(modbus_server_fixture: AsyncModbusServer):
@@ -147,6 +164,7 @@ async def test_async(modbus_server_fixture: AsyncModbusServer):
     assert not result.isError()
     assert result.registers[0] == modbus_server_fixture.test_number + 1
     modbus_client.close()
+
 
 @pytest.mark.asyncio
 async def test_synchronous(modbus_server_fixture: AsyncModbusServer):
