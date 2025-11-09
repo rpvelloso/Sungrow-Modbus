@@ -7,7 +7,7 @@ from collections import namedtuple
 from collections.abc import Callable
 import logging
 from typing import Any
-from .sungrow import AsyncSungrowModbusTcpClient
+from SungrowModbusTcpClient import AsyncSungrowModbusTcpClient
 
 from pymodbus.exceptions import ModbusException
 from pymodbus.framer import FramerType

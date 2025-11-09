@@ -3,3 +3,5 @@ build/
 dist/
 __pycache__
 .pymodhis
+.python-version
+uv.lock

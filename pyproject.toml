@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "sungrow-modbus"
+authors = [
+    { name = "Roberto Panerai Velloso", email = "rvelloso@gmail.com" },
+]
+version = "0.2.0"
+description = "A ModbusTcpClient wrapper for talking to Sungrow solar inverters"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pycryptodomex>=3.23.0",
+    "pymodbus>=3.11.3,<4.0.0",
+    "setuptools>=80.9.0",
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "GPL-3.0-only",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/rpvelloso/Sungrow-Modbus"
+
+[tool.setuptools.packages.find]
+exclude = ["tests"]
+
+[project.optional-dependencies]
+test = [
+    "black>=25.9.0",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+]
