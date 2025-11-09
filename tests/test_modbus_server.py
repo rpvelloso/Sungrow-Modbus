@@ -4,7 +4,7 @@ from SungrowModbusTcpClient.SungrowModbusTcpClient import (
     SungrowModbusTcpClient,
     PRIV_KEY,
     SungrowCryptoInitRequest,
-    SungrowModbusTCPWrapper,
+    SungrowModbusCryptoManager,
 )
 import pytest
 import pytest_asyncio
@@ -43,8 +43,8 @@ class AsyncModbusServer:
         self.test_number = random.randint(1, 0xFFFE)
         self.crypto = crypto
         self._pub_key: bytes = bytes([0xAA, 0xBB] * 8)
-        self.decoder = SungrowModbusTCPWrapper(priv_key=PRIV_KEY)
-        self.decoder.set_pub_key(self._pub_key)
+        self._sg_crypto = SungrowModbusCryptoManager(priv_key=PRIV_KEY)
+        self._sg_crypto.set_pub_key(self._pub_key)
         self._handshake_done = False
         self.setup_server()
 
@@ -114,9 +114,9 @@ class AsyncModbusServer:
             self._mb_server.decoder.register(ReadInputRegistersRequest)
 
         if sending:
-            return self.decoder._send_cypher(data)
+            return self._sg_crypto._send_cypher(data)
         else:
-            return self.decoder._recv_cypher(data)
+            return self._sg_crypto._recv_cypher(data)
 
 
 # This runs every test with and without crypto enabled
@@ -141,6 +141,7 @@ def modbus_server_fixture(request):
     th = threading.Thread(target=run_server, daemon=True)
     th.start()
     server_ready.wait(timeout=5)  # Wait for server to be ready
+    sleep(0.5)
     try:
         yield modbus_server
     finally:
@@ -151,6 +152,7 @@ def modbus_server_fixture(request):
             )
         )
         th.join(timeout=2)
+    sleep(0.5)
 
 
 @pytest.mark.asyncio
