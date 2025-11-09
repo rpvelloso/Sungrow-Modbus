@@ -2,9 +2,7 @@ from time import sleep
 from SungrowModbusTcpClient.SungrowModbusTcpClient import (
     AsyncSungrowModbusTcpClient,
     SungrowModbusTcpClient,
-    GET_KEY,
     PRIV_KEY,
-    HEADER,
     SungrowCryptoInitRequest,
     SungrowModbusTCPWrapper,
 )
@@ -103,11 +101,12 @@ class AsyncModbusServer:
             return self.decoder._recv_cypher(data)
 
 
-@pytest.fixture
-def modbus_server_fixture():
+# This runs every test with and without crypto enabled
+@pytest.fixture(params=[False, True])
+def modbus_server_fixture(request):
     # This awkward mess is to avoid having to implement a synchronous
     # test modbus server, so we run the async version in a separate thread.
-    modbus_server = AsyncModbusServer()
+    modbus_server = AsyncModbusServer(crypto=request.param)
     server_ready = threading.Event()
 
     def run_server():
@@ -122,7 +121,6 @@ def modbus_server_fixture():
     th = threading.Thread(target=run_server, daemon=True)
     th.start()
     server_ready.wait(timeout=5)  # Wait for server to be ready
-    sleep(1)  # I don't know. Sleepy server?
     try:
         yield modbus_server
     finally:
@@ -131,42 +129,9 @@ def modbus_server_fixture():
             lambda: asyncio.ensure_future(modbus_server.stop(), loop=modbus_server._loop)
         )
         th.join(timeout=2)
-    sleep(1)  # Let the server shut down properly
-
-
-@pytest.fixture
-def crypto_modbus_server_fixture():
-    # This awkward mess is to avoid having to implement a synchronous
-    # test modbus server, so we run the async version in a separate thread.
-    modbus_server = AsyncModbusServer(crypto=True)
-    server_ready = threading.Event()
-
-    def run_server():
-        loop = asyncio.new_event_loop()
-        modbus_server._loop = loop  # Save loop for teardown
-        asyncio.set_event_loop(loop)
-        async def start_and_signal():
-            server_ready.set()
-            await modbus_server.run_async_server()
-        loop.run_until_complete(start_and_signal())
-
-    th = threading.Thread(target=run_server, daemon=True)
-    th.start()
-    server_ready.wait(timeout=5)  # Wait for server to be ready
-    sleep(1)  # I don't know. Sleepy server?
-    try:
-        yield modbus_server
-    finally:
-        # Stop the server using the correct loop
-        modbus_server._loop.call_soon_threadsafe(
-            lambda: asyncio.ensure_future(modbus_server.stop(), loop=modbus_server._loop)
-        )
-        th.join(timeout=2)
-    sleep(1)  # Let the server shut down properly
-
 
 @pytest.mark.asyncio
-async def test_async_no_crypto(modbus_server_fixture: AsyncModbusServer):
+async def test_async(modbus_server_fixture: AsyncModbusServer):
     modbus_client = AsyncSungrowModbusTcpClient(host="127.0.0.1", port=5020)
     await modbus_client.connect()
     result = await modbus_client.read_holding_registers(1, count=1, device_id=1)
@@ -178,7 +143,7 @@ async def test_async_no_crypto(modbus_server_fixture: AsyncModbusServer):
     modbus_client.close()
 
 @pytest.mark.asyncio
-async def test_synchronous_no_crypto(modbus_server_fixture: AsyncModbusServer):
+async def test_synchronous(modbus_server_fixture: AsyncModbusServer):
 
     modbus_client = SungrowModbusTcpClient(host="127.0.0.1", port=5020)
     assert modbus_client.connect()
@@ -188,30 +153,4 @@ async def test_synchronous_no_crypto(modbus_server_fixture: AsyncModbusServer):
     # result = modbus_client.read_input_registers(1, count=1, device_id=1)
     # assert not result.isError()
     # assert result.registers[0] == modbus_server_fixture.test_number + 1
-    modbus_client.close()
-
-@pytest.mark.asyncio
-async def test_async_crypto(crypto_modbus_server_fixture: AsyncModbusServer):
-
-    modbus_client = AsyncSungrowModbusTcpClient(host="127.0.0.1", port=5020)
-    await modbus_client.connect()
-    result = await modbus_client.read_holding_registers(1, count=1, device_id=1)
-    assert not result.isError()
-    assert result.registers[0] == crypto_modbus_server_fixture.test_number
-    # result = await modbus_client.read_input_registers(1, count=1, device_id=1)
-    # assert not result.isError()
-    # assert result.registers[0] == crypto_modbus_server_fixture.test_number + 1
-    modbus_client.close()
-
-@pytest.mark.asyncio
-async def test_synchronous_crypto(crypto_modbus_server_fixture: AsyncModbusServer):
-
-    modbus_client = SungrowModbusTcpClient(host="127.0.0.1", port=5020)
-    assert modbus_client.connect()
-    result = modbus_client.read_holding_registers(1, count=1, device_id=1)
-    assert not result.isError()
-    assert result.registers[0] == crypto_modbus_server_fixture.test_number
-    # result = modbus_client.read_input_registers(1, count=1, device_id=1)
-    # assert not result.isError()
-    # assert result.registers[0] == crypto_modbus_server_fixture.test_number + 1
     modbus_client.close()
