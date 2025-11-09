@@ -22,6 +22,7 @@ from pymodbus.datastore import (
     ModbusSequentialDataBlock,
     ModbusServerContext,
 )
+from pymodbus.pdu.register_message import ReadInputRegistersRequest
 
 class AsyncModbusServer:
     """MODBUS server class."""
@@ -95,6 +96,11 @@ class AsyncModbusServer:
         if not self.crypto or not self._handshake_done:
             return data
 
+        # Un-register the SungrowCryptoInitRequest to avoid
+        # it interfering with normal operation after the handshake.
+        if self._mb_server is not None:
+            self._mb_server.decoder.register(ReadInputRegistersRequest)
+
         if sending:
             return self.decoder._send_cypher(data)
         else:
@@ -137,9 +143,9 @@ async def test_async(modbus_server_fixture: AsyncModbusServer):
     result = await modbus_client.read_holding_registers(1, count=1, device_id=1)
     assert not result.isError()
     assert result.registers[0] == modbus_server_fixture.test_number
-    # result = await modbus_client.read_input_registers(1, count=1, device_id=1)
-    # assert not result.isError()
-    # assert result.registers[0] == modbus_server_fixture.test_number + 1
+    result = await modbus_client.read_input_registers(1, count=1, device_id=1)
+    assert not result.isError()
+    assert result.registers[0] == modbus_server_fixture.test_number + 1
     modbus_client.close()
 
 @pytest.mark.asyncio
@@ -150,7 +156,7 @@ async def test_synchronous(modbus_server_fixture: AsyncModbusServer):
     result = modbus_client.read_holding_registers(1, count=1, device_id=1)
     assert not result.isError()
     assert result.registers[0] == modbus_server_fixture.test_number
-    # result = modbus_client.read_input_registers(1, count=1, device_id=1)
-    # assert not result.isError()
-    # assert result.registers[0] == modbus_server_fixture.test_number + 1
+    result = modbus_client.read_input_registers(1, count=1, device_id=1)
+    assert not result.isError()
+    assert result.registers[0] == modbus_server_fixture.test_number + 1
     modbus_client.close()

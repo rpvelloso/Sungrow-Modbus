@@ -2,6 +2,7 @@ from pymodbus.client import (
     ModbusTcpClient,
     AsyncModbusTcpClient,
 )
+from pymodbus.pdu.register_message import ReadInputRegistersResponse
 from pymodbus.datastore import ModbusDeviceContext
 from pymodbus.exceptions import ModbusIOException
 from pymodbus.pdu import ModbusPDU
@@ -36,9 +37,9 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         if not self._connected:
             return self._connected
 
+        request = SungrowCryptoInitRequest()
         # Register the custom handshake PDU
         self.register(SungrowCryptoInitResponse)
-        request = SungrowCryptoInitRequest()
         try:
             # Send and receive the handshake request/response,
             # extracting the public key from the response.
@@ -52,6 +53,9 @@ class SungrowModbusTcpClient(ModbusTcpClient):
                 return True
         except ModbusIOException:  # pragma: no cover
             print("Server doesn't support Sungrow handshake")
+        finally:
+            # Re-register the normal 0x04 Read Input Registers PDU
+            self.register(ReadInputRegistersResponse)
 
         return self._connected
 
@@ -79,9 +83,9 @@ class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
         if not result:
             return result
 
+        request = SungrowCryptoInitRequest()
         # Register the custom handshake PDU
         self.register(SungrowCryptoInitResponse)
-        request = SungrowCryptoInitRequest()
         try:
             # Send and receive the handshake request/response,
             # extracting the public key from the response.
@@ -93,6 +97,9 @@ class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
                 self._wrapper.set_pub_key(response.pub_key)
         except ModbusIOException:  # pragma: no cover
             print("Server doesn't support Sungrow handshake")
+        finally:
+            # Re-register the normal 0x04 Read Input Registers PDU
+            self.register(ReadInputRegistersResponse)
 
         return result
 
