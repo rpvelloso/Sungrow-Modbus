@@ -9,20 +9,22 @@ from Cryptodome.Cipher import AES
 from pymodbus.logging import Log
 from collections.abc import Callable
 
-PRIV_KEY = b'Grow#0*2Sun68CbE'
-NO_CRYPTO1 = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-NO_CRYPTO2 = b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'
-GET_KEY = b'\x68\x68\x00\x00\x00\x06\xf7\x04\x0a\xe7\x00\x08'
+PRIV_KEY = b"Grow#0*2Sun68CbE"
+NO_CRYPTO1 = b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+NO_CRYPTO2 = b"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+GET_KEY = b"\x68\x68\x00\x00\x00\x06\xf7\x04\x0a\xe7\x00\x08"
 HEADER = bytes([0x68, 0x68])
 
 
 class SungrowModbusTcpClient(ModbusTcpClient):
     def __init__(self, priv_key=PRIV_KEY, **kwargs):
         # Remove the caller's trace_packet function, if any.
-        trace_packet=kwargs.pop('trace_packet', None)
-        self._wrapper = SungrowModbusTCPWrapper(priv_key=priv_key, trace_packet=trace_packet)
+        callers_trace_packet = kwargs.pop("trace_packet", None)
+        self._wrapper = SungrowModbusTCPWrapper(
+            priv_key=priv_key, trace_packet=callers_trace_packet
+        )
         # Insert our own trace_packet function.
-        kwargs['trace_packet'] = self._wrapper.trace_packet
+        kwargs["trace_packet"] = self._wrapper.trace_packet
         super().__init__(**kwargs)
         self._connected = False
 
@@ -38,7 +40,10 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         request = SungrowCryptoInitRequest()
         try:
             response = self.execute(no_response_expected=False, request=request)
-            if isinstance(response, SungrowCryptoInitResponse) and response.pub_key is not None:
+            if (
+                isinstance(response, SungrowCryptoInitResponse)
+                and response.pub_key is not None
+            ):
                 self._wrapper.set_pub_key(response.pub_key)
                 self._connected = True
                 return True
@@ -48,18 +53,20 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         return self._connected
 
     def close(self):
-       super().close()
-       self._wrapper.reset()
-       self._connected = False
+        super().close()
+        self._wrapper.reset()
+        self._connected = False
 
 
 class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
     def __init__(self, priv_key=PRIV_KEY, **kwargs):
         # Remove the caller's trace_packet function, if any.
-        trace_packet=kwargs.pop('trace_packet', None)
-        self._wrapper = SungrowModbusTCPWrapper(priv_key=priv_key, trace_packet=trace_packet)
+        callers_trace_packet = kwargs.pop("trace_packet", None)
+        self._wrapper = SungrowModbusTCPWrapper(
+            priv_key=priv_key, trace_packet=callers_trace_packet
+        )
         # Insert our own trace_packet function.
-        kwargs['trace_packet'] = self._wrapper.trace_packet
+        kwargs["trace_packet"] = self._wrapper.trace_packet
         super().__init__(**kwargs)
 
     async def connect(self):
@@ -73,7 +80,10 @@ class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
         request = SungrowCryptoInitRequest()
         try:
             response = await self.execute(no_response_expected=False, request=request)
-            if isinstance(response, SungrowCryptoInitResponse) and response.pub_key is not None:
+            if (
+                isinstance(response, SungrowCryptoInitResponse)
+                and response.pub_key is not None
+            ):
                 self._wrapper.set_pub_key(response.pub_key)
         except ModbusIOException:  # pragma: no cover
             print("Server doesn't support Sungrow handshake")
@@ -81,36 +91,21 @@ class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
         return result
 
     def close(self):
-       Log.debug("*** AsyncSungrowModbusTcpClient *** close")
-       super().close()
-       self._wrapper.reset()
+        Log.debug("*** AsyncSungrowModbusTcpClient *** close")
+        super().close()
+        self._wrapper.reset()
 
 
 class SungrowCryptoException(ModbusIOException):
     """Exception for Sungrow Crypto errors."""
+
     pass
 
-# See pymodbus/examples/custom_msg.py
-class SungrowCryptoInitRequest(ModbusPDU):
+
+class SungrowCryptoInitPDU(ModbusPDU):
     function_code = 0x04
-    rtu_frame_size = 6
 
-    def __init__(self, values=None, device_id: int = 0xf7, transaction=0x6868):
-        super().__init__(dev_id=device_id, transaction_id=transaction)
-        self.key_request: bytes | None = None
-
-    def encode(self):
-        # 68 68 00 00 00 12 f7 04 aabbaabbaabbaabbaabbaabbaabbaabb
-        return GET_KEY[8:]
-
-    def decode(self, data: bytes):
-        self.key_request = data
-
-    async def update_datastore(self, context: ModbusDeviceContext) -> ModbusPDU:
-        print("SungrowCryptoInitRequest update_datastore called")
-        return SungrowCryptoInitResponse()
-
-    # The transaction needs to be immutable for this class
+    # The transaction needs to be immutable for these classes
     @property
     def transaction_id(self) -> int:
         return 0x6868
@@ -121,20 +116,39 @@ class SungrowCryptoInitRequest(ModbusPDU):
 
     @property
     def device_id(self) -> int:
-        return 0xf7
+        return 0xF7
 
     @device_id.setter
     def device_id(self, value: int) -> None:
         pass
 
 
-class SungrowCryptoInitResponse(ModbusPDU):
-    function_code = 0x04
+class SungrowCryptoInitRequest(SungrowCryptoInitPDU):
+    rtu_frame_size = 6
+
+    def __init__(self, values=None, dev_id: int = 0xF7, transaction=0x6868):
+        super().__init__(dev_id=dev_id, transaction_id=transaction)
+        self.key_request: bytes | None = None
+
+    def encode(self):
+        return GET_KEY[8:]
+
+    def decode(self, data: bytes):
+        self.key_request = data
+
+    async def update_datastore(self, context: ModbusDeviceContext) -> ModbusPDU:
+        print("SungrowCryptoInitRequest update_datastore called")
+        return SungrowCryptoInitResponse()
+
+
+class SungrowCryptoInitResponse(SungrowCryptoInitPDU):
     rtu_frame_size = 17
 
-    def __init__(self, values=None, device_id: int = 0xf7, transaction=0x6868):
-        super().__init__(dev_id=device_id, transaction_id=transaction)
-        self._demo_pub_key: bytes = bytes([0xaa, 0xbb] * 8)
+    def __init__(self, values=None, dev_id: int = 0xF7, transaction=0x6868):
+        super().__init__(dev_id=dev_id, transaction_id=transaction)
+        # This response is used by the Sungrow inverter simulator in the tests.
+        # This demo pubkey is not used in production clients.
+        self._demo_pub_key: bytes = bytes([0xAA, 0xBB] * 8)
         self.pub_key: bytes | None = None
 
     def encode(self):
@@ -150,25 +164,25 @@ class SungrowCryptoInitResponse(ModbusPDU):
         self.pub_key = possible_pub_key
         print("Received Sungrow public key:", self.pub_key.hex())
 
-    # The transaction needs to be immutable for this class
-    @property
-    def transaction_id(self) -> int:
-        return 0x6868
 
-    @transaction_id.setter
-    def transaction_id(self, value: int) -> None:
-        pass
+class SungrowModbusTCPWrapper:
+    """
+    This class handles the cryptographic decoding/encoding the Sungrow
+    Modbus TCP comms. It provides a `trace_packet` function that can be
+    passed to the ModbusTcpClient/AsyncModbusTcpClient to intercept the
+    raw bytes being sent/received, and perform the necessary encryption/
+    decryption.
+    The `trace_packet` function will pass through bytes as-is until the
+    crypto handshake has taken place, and the inverter's public key has been
+    set using the `set_pub_key` method. After that, it will encrypt outgoing
+    packets and decrypt incoming packets automatically.
+    """
 
-    @property
-    def device_id(self) -> int:
-        return 0xf7
-
-    @device_id.setter
-    def device_id(self, value: int) -> None:
-        pass
-
-class SungrowModbusTCPWrapper():
-    def __init__(self, priv_key=PRIV_KEY, trace_packet: Callable[[bool, bytes], bytes] | None = None):
+    def __init__(
+        self,
+        priv_key=PRIV_KEY,
+        trace_packet: Callable[[bool, bytes], bytes] | None = None,
+    ):
         # Save the caller's trace_packet function, if present.
         self._caller_trace_packet: Callable[[bool, bytes], bytes] | None = trace_packet
         self._priv_key = priv_key
@@ -197,7 +211,7 @@ class SungrowModbusTCPWrapper():
         length = len(request)
         padding = 16 - (length % 16)
         self._transactionID = request[:2]
-        request = HEADER + bytes(request[2:]) + bytes([0xff] * padding)
+        request = HEADER + bytes(request[2:]) + bytes([0xFF] * padding)
         crypto_header = bytes([1, 0, length, padding])
         return crypto_header + self._aes_ecb.encrypt(request)
 
@@ -220,9 +234,9 @@ class SungrowModbusTCPWrapper():
 
     def trace_packet(self, sending: bool, data: bytes) -> bytes:
         """
-            This function is called when sending or receiving bytes on the network.
-            It handles encryption/decryption as needed, and calls the original
-            trace_packet function provided by the caller, if any.
+        This function is called when sending or receiving bytes on the network.
+        It handles encryption/decryption as needed, and calls the original
+        trace_packet function provided by the caller, if any.
         """
         if sending:
             if self._caller_trace_packet:

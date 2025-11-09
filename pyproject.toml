@@ -26,6 +26,7 @@ exclude = ["tests"]
 
 [project.optional-dependencies]
 test = [
+    "black>=25.9.0",
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
 ]
