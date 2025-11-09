@@ -37,21 +37,23 @@ class AsyncModbusServer:
         self._mb_server: ModbusTcpServer | None = None
         self.host: str = host
         self.port: int = port
-        self.test_number = random.randint(1, 0xFFFF)
+        self.test_number = random.randint(1, 0xFFFE)
         self.crypto = crypto
         self._pub_key: bytes = bytes([0xaa, 0xbb] * 8)
         self.decoder = SungrowModbusTCPWrapper(priv_key=PRIV_KEY)
         self.decoder.set_pub_key(self._pub_key)
-        self.handshake_done = False
+        self._handshake_done = False
         self.setup_server()
 
     def setup_server(self) -> None:
         """Run server setup."""
         self.holding_registers = ModbusSequentialDataBlock(0x00, [self.test_number] * 100)
-        self.input_registers = ModbusSequentialDataBlock(0x00, [0] * 100)
+        self.input_registers = ModbusSequentialDataBlock(0x00, [self.test_number+1] * 100)
         self.storage = ModbusDeviceContext(
             hr=self.holding_registers, ir=self.input_registers
         )
+        # This is set by SungrowCryptoInitRequest.update_datastore()
+        self.storage.store['handshake_signal'] = False
         self.context = ModbusServerContext(devices=self.storage)
 
     async def set_holding_register(self, address: int, value: int) -> None:
@@ -86,14 +88,19 @@ class AsyncModbusServer:
             self._mb_server = None
 
     def trace_packet(self, sending: bool, data: bytes) -> bytes:
-        if not self.crypto or not self.handshake_done:
+
+        if self.crypto and not self._handshake_done and self.storage.store['handshake_signal']:
+            # Rising edge on the handshake. Enable encryption after this send.
+            self._handshake_done = True
+            return data
+
+        if not self.crypto or not self._handshake_done:
             return data
 
         if sending:
-            data = self.decoder._send_cypher(data)
+            return self.decoder._send_cypher(data)
         else:
-            data = self.decoder._recv_cypher(data)
-        return data
+            return self.decoder._recv_cypher(data)
 
 
 @pytest.fixture
@@ -165,6 +172,9 @@ async def test_async_no_crypto(modbus_server_fixture: AsyncModbusServer):
     result = await modbus_client.read_holding_registers(1, count=1, device_id=1)
     assert not result.isError()
     assert result.registers[0] == modbus_server_fixture.test_number
+    # result = await modbus_client.read_input_registers(1, count=1, device_id=1)
+    # assert not result.isError()
+    # assert result.registers[0] == modbus_server_fixture.test_number + 1
     modbus_client.close()
 
 @pytest.mark.asyncio
@@ -175,6 +185,9 @@ async def test_synchronous_no_crypto(modbus_server_fixture: AsyncModbusServer):
     result = modbus_client.read_holding_registers(1, count=1, device_id=1)
     assert not result.isError()
     assert result.registers[0] == modbus_server_fixture.test_number
+    # result = modbus_client.read_input_registers(1, count=1, device_id=1)
+    # assert not result.isError()
+    # assert result.registers[0] == modbus_server_fixture.test_number + 1
     modbus_client.close()
 
 @pytest.mark.asyncio
@@ -182,10 +195,12 @@ async def test_async_crypto(crypto_modbus_server_fixture: AsyncModbusServer):
 
     modbus_client = AsyncSungrowModbusTcpClient(host="127.0.0.1", port=5020)
     await modbus_client.connect()
-    crypto_modbus_server_fixture.handshake_done = True
     result = await modbus_client.read_holding_registers(1, count=1, device_id=1)
     assert not result.isError()
     assert result.registers[0] == crypto_modbus_server_fixture.test_number
+    # result = await modbus_client.read_input_registers(1, count=1, device_id=1)
+    # assert not result.isError()
+    # assert result.registers[0] == crypto_modbus_server_fixture.test_number + 1
     modbus_client.close()
 
 @pytest.mark.asyncio
@@ -193,8 +208,10 @@ async def test_synchronous_crypto(crypto_modbus_server_fixture: AsyncModbusServe
 
     modbus_client = SungrowModbusTcpClient(host="127.0.0.1", port=5020)
     assert modbus_client.connect()
-    crypto_modbus_server_fixture.handshake_done = True
     result = modbus_client.read_holding_registers(1, count=1, device_id=1)
     assert not result.isError()
     assert result.registers[0] == crypto_modbus_server_fixture.test_number
+    # result = modbus_client.read_input_registers(1, count=1, device_id=1)
+    # assert not result.isError()
+    # assert result.registers[0] == crypto_modbus_server_fixture.test_number + 1
     modbus_client.close()

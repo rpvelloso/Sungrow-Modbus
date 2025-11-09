@@ -36,9 +36,12 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         if not self._connected:
             return self._connected
 
+        # Register the custom handshake PDU
         self.register(SungrowCryptoInitResponse)
         request = SungrowCryptoInitRequest()
         try:
+            # Send and receive the handshake request/response,
+            # extracting the public key from the response.
             response = self.execute(no_response_expected=False, request=request)
             if (
                 isinstance(response, SungrowCryptoInitResponse)
@@ -76,9 +79,12 @@ class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
         if not result:
             return result
 
+        # Register the custom handshake PDU
         self.register(SungrowCryptoInitResponse)
         request = SungrowCryptoInitRequest()
         try:
+            # Send and receive the handshake request/response,
+            # extracting the public key from the response.
             response = await self.execute(no_response_expected=False, request=request)
             if (
                 isinstance(response, SungrowCryptoInitResponse)
@@ -137,7 +143,8 @@ class SungrowCryptoInitRequest(SungrowCryptoInitPDU):
         self.key_request = data
 
     async def update_datastore(self, context: ModbusDeviceContext) -> ModbusPDU:
-        print("SungrowCryptoInitRequest update_datastore called")
+        # This is a mild crime, but it's only used in the tests, so...
+        context.store['handshake_signal'] = True
         return SungrowCryptoInitResponse()
 
 
