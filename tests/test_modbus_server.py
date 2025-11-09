@@ -114,6 +114,7 @@ def modbus_server_fixture():
     th = threading.Thread(target=run_server, daemon=True)
     th.start()
     server_ready.wait(timeout=5)  # Wait for server to be ready
+    sleep(1)  # I don't know. Sleepy server?
     try:
         yield modbus_server
     finally:
@@ -121,6 +122,7 @@ def modbus_server_fixture():
         loop = asyncio.get_event_loop()
         loop.run_until_complete(modbus_server.stop())
         th.join(timeout=2)
+    sleep(1)  # Let the server shut down properly
 
 
 @pytest.fixture
@@ -149,6 +151,7 @@ def crypto_modbus_server_fixture():
         loop = asyncio.get_event_loop()
         loop.run_until_complete(modbus_server.stop())
         th.join(timeout=2)
+    sleep(1)  # Let the server shut down properly
 
 
 @pytest.mark.asyncio
