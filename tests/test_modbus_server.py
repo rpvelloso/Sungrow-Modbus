@@ -27,7 +27,7 @@ from pymodbus.datastore import (
 
 class AsyncModbusServer:
     """MODBUS server class."""
-    def __init__(self, host: str = "localhost", port: int = 5020, crypto: bool = False) -> None:
+    def __init__(self, host: str = "127.0.0.1", port: int = 5020, crypto: bool = False) -> None:
         """Initialize server context and identity."""
         self.storage: ModbusDeviceContext
         self.context: ModbusServerContext
@@ -153,7 +153,7 @@ def crypto_modbus_server_fixture():
 
 @pytest.mark.asyncio
 async def test_async_no_crypto(modbus_server_fixture: AsyncModbusServer):
-    modbus_client = AsyncSungrowModbusTcpClient(host="localhost", port=5020)
+    modbus_client = AsyncSungrowModbusTcpClient(host="127.0.0.1", port=5020)
     await modbus_client.connect()
     result = await modbus_client.read_holding_registers(1, count=1, device_id=1)
     assert not result.isError()
@@ -163,7 +163,7 @@ async def test_async_no_crypto(modbus_server_fixture: AsyncModbusServer):
 @pytest.mark.asyncio
 async def test_synchronous_no_crypto(modbus_server_fixture: AsyncModbusServer):
 
-    modbus_client = SungrowModbusTcpClient(host="localhost", port=5020)
+    modbus_client = SungrowModbusTcpClient(host="127.0.0.1", port=5020)
     assert modbus_client.connect()
     result = modbus_client.read_holding_registers(1, count=1, device_id=1)
     assert not result.isError()
@@ -173,7 +173,7 @@ async def test_synchronous_no_crypto(modbus_server_fixture: AsyncModbusServer):
 @pytest.mark.asyncio
 async def test_async_crypto(crypto_modbus_server_fixture: AsyncModbusServer):
 
-    modbus_client = AsyncSungrowModbusTcpClient(host="localhost", port=5020)
+    modbus_client = AsyncSungrowModbusTcpClient(host="127.0.0.1", port=5020)
     await modbus_client.connect()
     crypto_modbus_server_fixture.handshake_done = True
     result = await modbus_client.read_holding_registers(1, count=1, device_id=1)
@@ -184,7 +184,7 @@ async def test_async_crypto(crypto_modbus_server_fixture: AsyncModbusServer):
 @pytest.mark.asyncio
 async def test_synchronous_crypto(crypto_modbus_server_fixture: AsyncModbusServer):
 
-    modbus_client = SungrowModbusTcpClient(host="localhost", port=5020)
+    modbus_client = SungrowModbusTcpClient(host="127.0.0.1", port=5020)
     assert modbus_client.connect()
     crypto_modbus_server_fixture.handshake_done = True
     result = modbus_client.read_holding_registers(1, count=1, device_id=1)
