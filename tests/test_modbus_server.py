@@ -105,6 +105,7 @@ def modbus_server_fixture():
 
     def run_server():
         loop = asyncio.new_event_loop()
+        modbus_server._loop = loop  # Save loop for teardown
         asyncio.set_event_loop(loop)
         async def start_and_signal():
             server_ready.set()
@@ -118,9 +119,10 @@ def modbus_server_fixture():
     try:
         yield modbus_server
     finally:
-        # Stop the server
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(modbus_server.stop())
+        # Stop the server using the correct loop
+        modbus_server._loop.call_soon_threadsafe(
+            lambda: asyncio.ensure_future(modbus_server.stop(), loop=modbus_server._loop)
+        )
         th.join(timeout=2)
     sleep(1)  # Let the server shut down properly
 
@@ -134,6 +136,7 @@ def crypto_modbus_server_fixture():
 
     def run_server():
         loop = asyncio.new_event_loop()
+        modbus_server._loop = loop  # Save loop for teardown
         asyncio.set_event_loop(loop)
         async def start_and_signal():
             server_ready.set()
@@ -147,9 +150,10 @@ def crypto_modbus_server_fixture():
     try:
         yield modbus_server
     finally:
-        # Stop the server
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(modbus_server.stop())
+        # Stop the server using the correct loop
+        modbus_server._loop.call_soon_threadsafe(
+            lambda: asyncio.ensure_future(modbus_server.stop(), loop=modbus_server._loop)
+        )
         th.join(timeout=2)
     sleep(1)  # Let the server shut down properly
 
