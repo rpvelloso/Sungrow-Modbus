@@ -18,6 +18,12 @@ dependencies = [
     "setuptools>=80.9.0",
 ]
 
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "GPL-3.0-only",
+    "Operating System :: OS Independent",
+]
+
 [project.urls]
 Homepage = "https://github.com/rpvelloso/Sungrow-Modbus"
 
