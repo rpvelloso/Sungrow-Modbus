@@ -30,6 +30,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         self._connected = False
 
     def connect(self) -> bool:
+        Log.debug("*** SungrowModbusTcpClient *** connect")
         if self._connected:
             return True
 
@@ -52,7 +53,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
                 self._connected = True
                 return True
         except ModbusIOException:  # pragma: no cover
-            print("Server doesn't support Sungrow handshake")
+            Log.info("*** SungrowModbusTcpClient *** Server doesn't support Sungrow handshake")
         finally:
             # Re-register the normal 0x04 Read Input Registers PDU
             self.register(ReadInputRegistersResponse)
@@ -60,6 +61,7 @@ class SungrowModbusTcpClient(ModbusTcpClient):
         return self._connected
 
     def close(self):
+        Log.debug("*** SungrowModbusTcpClient *** close")
         super().close()
         self._sg_crypto.reset()
         self._connected = False
@@ -96,7 +98,7 @@ class AsyncSungrowModbusTcpClient(AsyncModbusTcpClient):
             ):
                 self._sg_crypto.set_pub_key(response.pub_key)
         except ModbusIOException:  # pragma: no cover
-            print("Server doesn't support Sungrow handshake")
+            Log.info("*** AsyncSungrowModbusTcpClient *** Server doesn't support Sungrow handshake")
         finally:
             # Re-register the normal 0x04 Read Input Registers PDU
             self.register(ReadInputRegistersResponse)
