@@ -27,7 +27,7 @@ from pymodbus.datastore import (
 
 class AsyncModbusServer:
     """MODBUS server class."""
-    def __init__(self, host: str = "0.0.0.0", port: int = 5020, crypto: bool = False) -> None:
+    def __init__(self, host: str = "localhost", port: int = 5020, crypto: bool = False) -> None:
         """Initialize server context and identity."""
         self.storage: ModbusDeviceContext
         self.context: ModbusServerContext
